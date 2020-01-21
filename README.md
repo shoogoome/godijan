@@ -1,7 +1,8 @@
 # godijan--dijan客户端
 
 ## 简介
-dijan的客户端sdk，自动进行集群一致性哈希适配，容器外部调用hostname映射
+dijan的客户端sdk，自动进行集群一致性哈希适配，容器外部调用hostname映射  
+dijan: ```https://github.com/shoogoome/dijan```
 
 ## 使用说明
 
