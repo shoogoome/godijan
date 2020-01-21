@@ -1,15 +1,13 @@
 package godijan
 
 import (
-	"bufio"
-	"errors"
 	"fmt"
-	"io"
-	"log"
-	"net"
-	"strconv"
-	"strings"
+	"stathat.com/c/consistent"
+	"sync"
 )
+
+var lock sync.RWMutex
+type connMapping map[string]dijanConn
 
 type Cmd struct {
 	Name  string
@@ -25,104 +23,43 @@ type GoDijan interface {
 	Del(string) error
 	Run(*Cmd)
 	PipelinedRun([]*Cmd)
-	Close()
 }
 
 type goDijan struct {
-	net.Conn
-	r *bufio.Reader
-	mapping map[string]string
-}
-
-func NewGoDijanConnection(host string, mapping map[string]string) GoDijan {
-	c, e := net.Dial("tcp", host)
-	if e != nil {
-		panic(e)
-	}
-	r := bufio.NewReader(c)
-	return &goDijan{c, r, mapping}
-}
-
-func (c *goDijan) Close() {
-	c.Conn.Close()
-}
-
-func (c *goDijan) sendGet(key string) {
-	klen := len(key)
-	c.Write([]byte(fmt.Sprintf("G%d %s", klen, key)))
-}
-
-func (c *goDijan) sendSet(key, value string, ttl ...int) {
-	klen := len(key)
-	vlen := len(value)
-	if len(ttl) > 0 && ttl[0] != 0 {
-		ttlString := strconv.Itoa(ttl[0])
-		c.Write([]byte(fmt.Sprintf("S%d %d %d %s%s%s", klen, vlen, len(ttlString), key, value, ttlString)))
-	} else {
-		c.Write([]byte(fmt.Sprintf("S%d %d 0 %s%s", klen, vlen, key, value)))
-	}
-}
-
-func (c *goDijan) sendDel(key string) {
-	klen := len(key)
-	c.Write([]byte(fmt.Sprintf("D%d %s", klen, key)))
+	conn connMapping
+	hostnameMapping map[string]string
+	circle *consistent.Consistent
 }
 
 func (c *goDijan) Get(key string) (string, error) {
-	c.sendGet(key)
-	value, err := c.recvResponse()
-	if err != nil {
-		addr := fmt.Sprintf("%s", err)
-		if c.mapping != nil {
-			addr = c.mapping[addr]
-		}
-		conn := NewGoDijanConnection(addr, nil)
-		defer conn.Close()
-		return conn.Get(key)
+	conn := c.getConn(key)
+	if err := conn.sendGet(key); err != nil {
+		c.setCircle()
+		return c.Get(key)
 	}
-	return value, err
+	return conn.recvResponse()
 }
 
 func (c *goDijan) Set(key, value string, ttl ...int) error {
-	c.sendSet(key, value, ttl...)
-	_, err := c.recvResponse()
-	if err != nil {
-		addr := fmt.Sprintf("%s", err)
-		if c.mapping != nil {
-			addr = c.mapping[addr]
-		}
-		conn := NewGoDijanConnection(addr, nil)
-		defer conn.Close()
-		return conn.Set(key, value, ttl...)
+	conn := c.getConn(key)
+	fmt.Println("?")
+	if err := conn.sendSet(key, value, ttl...); err != nil {
+		fmt.Println("!", err)
+		c.setCircle()
+		//return c.Set(key, value, ttl...)
 	}
+	_, err := conn.recvResponse()
 	return err
 }
 
 func (c *goDijan) Del(key string) error {
-	c.sendDel(key)
-	_, err := c.recvResponse()
+	conn := c.getConn(key)
+	if err := conn.sendDel(key); err != nil {
+		c.setCircle()
+		return c.Del(key)
+	}
+	_, err := conn.recvResponse()
 	return err
-}
-
-func (c *goDijan) recvResponse() (string, error) {
-	vlen := readLen(c.r)
-	if vlen == 0 {
-		return "", nil
-	}
-	if vlen < 0 {
-		err := make([]byte, -vlen)
-		_, e := io.ReadFull(c.r, err)
-		if e != nil {
-			return "", e
-		}
-		return "", errors.New(string(err))
-	}
-	value := make([]byte, vlen)
-	_, e := io.ReadFull(c.r, value)
-	if e != nil {
-		return "", e
-	}
-	return string(value), nil
 }
 
 func (c *goDijan) Run(cmd *Cmd) {
@@ -140,41 +77,40 @@ func (c *goDijan) Run(cmd *Cmd) {
 	panic("unknown cmd name " + cmd.Name)
 }
 
-/*
- pipe方法只允许在单机模式下使用
- 集群模式将会有大部分键未能命中缓存的情况
-*/
-func (c *goDijan) PipelinedRun(cmds []*Cmd) {
-	if len(cmds) == 0 {
-		return
-	}
-	for _, cmd := range cmds {
-		if cmd.Name == "get" {
-			c.sendGet(cmd.Key)
+
+// 获取key对应主机tcp连接
+func (c *goDijan) getConn(key string) dijanConn {
+	count := 5
+GET:
+	hostname, err := c.circle.Get(key)
+	fmt.Println("key", hostname)
+	if err != nil {
+		if count <= 0 {
+			panic("[!] consistent setting fail")
 		}
-		if cmd.Name == "set" {
-			c.sendSet(cmd.Key, cmd.Value, cmd.TTL)
-		}
-		if cmd.Name == "del" {
-			c.sendDel(cmd.Key)
+		c.setCircle()
+		count -=  1
+		goto GET
+	}
+	if c.hostnameMapping != nil {
+		if nHostname, ok := c.hostnameMapping[hostname]; ok {
+			hostname = nHostname
 		}
 	}
-	for _, cmd := range cmds {
-		cmd.Value, cmd.Error = c.recvResponse()
+	lock.RLock()
+	conn, ok := c.conn[hostname]
+	lock.RUnlock()
+	if !ok {
+		if count <= 0 {
+			panic("[!] consistent setting fail")
+		}
+		c.setCircle()
+		count -=  1
+		goto GET
 	}
+	//fmt.Println("!!")
+	return conn
 }
 
-func readLen(r *bufio.Reader) int {
-	tmp, e := r.ReadString(' ')
-	if e != nil {
-		log.Println(e)
-		return 0
-	}
-	l, e := strconv.Atoi(strings.TrimSpace(tmp))
-	if e != nil {
-		log.Println(tmp, e)
-		return 0
-	}
-	return l
-}
+
 
