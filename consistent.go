@@ -2,7 +2,6 @@ package godijan
 
 import (
 	"bufio"
-	"fmt"
 	"net"
 	"stathat.com/c/consistent"
 	"strings"
@@ -39,7 +38,6 @@ func (c *goDijan) setCircle() {
 	}
 
 	connList := make(map[string]dijanConn, len(nodesList))
-	fmt.Println(nodesList)
 	for _, node := range nodesList {
 		if c.hostnameMapping != nil {
 			for i := 0; i < len(nodesList); i++ {
@@ -48,10 +46,8 @@ func (c *goDijan) setCircle() {
 				}
 			}
 		}
-		fmt.Println(node)
 		co, e := net.Dial("tcp", node)
 		if e != nil {
-			fmt.Println("node", node)
 			panic(e)
 		}
 		r := bufio.NewReader(co)

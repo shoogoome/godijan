@@ -1,7 +1,6 @@
 package godijan
 
 import (
-	"fmt"
 	"stathat.com/c/consistent"
 	"sync"
 )
@@ -42,11 +41,9 @@ func (c *goDijan) Get(key string) (string, error) {
 
 func (c *goDijan) Set(key, value string, ttl ...int) error {
 	conn := c.getConn(key)
-	fmt.Println("?")
 	if err := conn.sendSet(key, value, ttl...); err != nil {
-		fmt.Println("!", err)
 		c.setCircle()
-		//return c.Set(key, value, ttl...)
+		return c.Set(key, value, ttl...)
 	}
 	_, err := conn.recvResponse()
 	return err
@@ -83,7 +80,6 @@ func (c *goDijan) getConn(key string) dijanConn {
 	count := 5
 GET:
 	hostname, err := c.circle.Get(key)
-	fmt.Println("key", hostname)
 	if err != nil {
 		if count <= 0 {
 			panic("[!] consistent setting fail")
