@@ -1,4 +1,4 @@
-module godijan
+module github.com/shoogoome/godijan
 
 go 1.13
 
