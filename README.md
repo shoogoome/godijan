@@ -32,10 +32,7 @@ func TestConn(t *testing.T) {
 		panic(err)
 	}
 	
-	dijan := godijan.NewGoDijanConnection("localhost:2375", map[string]string {
-		"dijan-0.dijan-service": "localhost:2375",
-		"dijan-1.dijan-service": "localhost:2333",
-	})
+	dijan := godijan.NewGoDijanConnection("localhost:2375", nil)
 	if err := dijan.Set("models:account:1", accountString); err != nil {
 		panic(err)
 	}
