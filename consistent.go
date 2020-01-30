@@ -2,6 +2,7 @@ package godijan
 
 import (
 	"bufio"
+	"fmt"
 	"net"
 	"stathat.com/c/consistent"
 	"strings"
@@ -20,14 +21,17 @@ func (c *goDijan) setCircle() {
 			continue
 		}
 		if err := conn.sendMemberSignal(); err != nil {
+			fmt.Println("sendMemberSignal：", err)
 			conn.Close()
 			continue
 		}
 		nodes, err := conn.recvResponse()
 		if err != nil {
+			fmt.Println("获取nodes：", err)
 			conn.Close()
 			continue
 		}
+		fmt.Println("aa：", nodes)
 		nodesList = strings.Split(nodes, " ")
 		circle := consistent.New()
 		circle.NumberOfReplicas = len(nodesList)
