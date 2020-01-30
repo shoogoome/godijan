@@ -9,6 +9,7 @@ import (
 
 func readLen(r *bufio.Reader) int {
 	tmp, e := r.ReadString(' ')
+	tmp = strings.Trim(tmp, "\x00")
 	if e != nil {
 		log.Println(e)
 		return 0
