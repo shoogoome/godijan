@@ -61,6 +61,7 @@ func (c *goDijan) setCircle() {
 		}
 	}
 	c.conn = connList
+	fmt.Println("lianjie", c.conn)
 }
 
 
