@@ -32,6 +32,7 @@ func (c *goDijan) setCircle() {
 		nodesList = strings.Split(nodes, " ")
 		circle := consistent.New()
 		circle.NumberOfReplicas = len(nodesList)
+		fmt.Println(nodesList)
 		circle.Set(nodesList)
 		c.circle = circle
 		conn.Close()
