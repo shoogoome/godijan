@@ -30,10 +30,13 @@ type goDijan struct {
 	circle *consistent.Consistent
 	port int
 	node int
+	sync.RWMutex
 }
 
 func (c *goDijan) Get(key string) (string, error) {
 	conn := c.getConn(key)
+	c.Lock()
+	defer c.Unlock()
 	if err := conn.sendGet(key); err != nil {
 		c.setCircle()
 		return c.Get(key)
@@ -43,6 +46,8 @@ func (c *goDijan) Get(key string) (string, error) {
 
 func (c *goDijan) Set(key, value string, ttl ...int) error {
 	conn := c.getConn(key)
+	c.Lock()
+	defer c.Unlock()
 	if err := conn.sendSet(key, value, ttl...); err != nil {
 		c.setCircle()
 		return c.Set(key, value, ttl...)
@@ -53,6 +58,8 @@ func (c *goDijan) Set(key, value string, ttl ...int) error {
 
 func (c *goDijan) Del(key string) error {
 	conn := c.getConn(key)
+	c.Lock()
+	defer c.Unlock()
 	if err := conn.sendDel(key); err != nil {
 		c.setCircle()
 		return c.Del(key)
