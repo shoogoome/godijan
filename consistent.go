@@ -21,17 +21,14 @@ func (c *goDijan) setCircle() {
 			continue
 		}
 		if err := conn.sendMemberSignal(); err != nil {
-			fmt.Println("sendMemberSignal：", err)
 			conn.Close()
 			continue
 		}
 		nodes, err := conn.recvResponse()
 		if err != nil {
-			fmt.Println("获取nodes：", err)
 			conn.Close()
 			continue
 		}
-		fmt.Println("aa：", nodes)
 		nodesList = strings.Split(nodes, " ")
 		circle := consistent.New()
 		circle.NumberOfReplicas = len(nodesList)
@@ -50,7 +47,7 @@ func (c *goDijan) setCircle() {
 				}
 			}
 		}
-		co, e := net.Dial("tcp", node)
+		co, e := net.Dial("tcp", fmt.Sprintf("%s:%d", node, c.port))
 		if e != nil {
 			panic(e)
 		}
@@ -61,7 +58,6 @@ func (c *goDijan) setCircle() {
 		}
 	}
 	c.conn = connList
-	fmt.Println("lianjie", c.conn)
 }
 
 

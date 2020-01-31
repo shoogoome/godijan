@@ -28,6 +28,7 @@ type goDijan struct {
 	conn connMapping
 	hostnameMapping map[string]string
 	circle *consistent.Consistent
+	port int
 }
 
 func (c *goDijan) Get(key string) (string, error) {

@@ -2,11 +2,12 @@ package godijan
 
 import (
 	"bufio"
+	"fmt"
 	"net"
 )
 
-func NewGoDijanConnection(host string, mapping map[string]string) GoDijan {
-	c, e := net.Dial("tcp", host)
+func NewGoDijanConnection(host string, port int, mapping map[string]string) GoDijan {
+	c, e := net.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
 	if e != nil {
 		panic(e)
 	}
@@ -20,6 +21,7 @@ func NewGoDijanConnection(host string, mapping map[string]string) GoDijan {
 		},
 		hostnameMapping: mapping,
 		circle:          nil,
+		port: port,
 	}
 	dijan.setCircle()
 	return &dijan
