@@ -30,6 +30,7 @@ type goDijan struct {
 	hostnameMapping map[string]string
 	circle *consistent.Consistent
 	port int
+	node int
 }
 
 func (c *goDijan) Get(key string) (string, error) {

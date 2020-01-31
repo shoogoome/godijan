@@ -6,7 +6,7 @@ import (
 	"net"
 )
 
-func NewGoDijanConnection(host string, port int, mapping map[string]string) GoDijan {
+func NewGoDijanConnection(host string, port int, node int, mapping map[string]string) GoDijan {
 	c, e := net.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
 	if e != nil {
 		panic(e)
@@ -22,6 +22,7 @@ func NewGoDijanConnection(host string, port int, mapping map[string]string) GoDi
 		hostnameMapping: mapping,
 		circle:          nil,
 		port: port,
+		node: node,
 	}
 	dijan.setCircle()
 	return &dijan
