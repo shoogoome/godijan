@@ -1,7 +1,6 @@
 package godijan
 
 import (
-	"fmt"
 	"stathat.com/c/consistent"
 	"sync"
 )
@@ -83,7 +82,6 @@ func (c *goDijan) getConn(key string) dijanConn {
 	count := 5
 GET:
 	hostname, err := c.circle.Get(key)
-	fmt.Println("key", hostname)
 	if err != nil {
 		if count <= 0 {
 			panic("[!] consistent setting fail")

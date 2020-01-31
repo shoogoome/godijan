@@ -21,5 +21,4 @@ func TestConn(t *testing.T) {
 	if e != nil {
 		log.Println(tmp, e)
 	}
-	fmt.Println(l)
 }
