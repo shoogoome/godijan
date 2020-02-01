@@ -11,14 +11,14 @@ type connMapping map[string]dijanConn
 type Cmd struct {
 	Name  string
 	Key   string
-	Value string
+	Value []byte
 	TTL   int
 	Error error
 }
 
 type GoDijan interface {
-	Get(string) (string, error)
-	Set(string, string, ...int) error
+	Get(string) ([]byte, error)
+	Set(string, []byte, ...int) error
 	Del(string) error
 	Run(*Cmd)
 	PipelinedRun([]*Cmd)
@@ -33,7 +33,7 @@ type goDijan struct {
 	sync.RWMutex
 }
 
-func (c *goDijan) Get(key string) (string, error) {
+func (c *goDijan) Get(key string) ([]byte, error) {
 	conn := c.getConn(key)
 	c.Lock()
 	defer c.Unlock()
@@ -44,7 +44,7 @@ func (c *goDijan) Get(key string) (string, error) {
 	return conn.recvResponse()
 }
 
-func (c *goDijan) Set(key, value string, ttl ...int) error {
+func (c *goDijan) Set(key string, value []byte, ttl ...int) error {
 	conn := c.getConn(key)
 	c.Lock()
 	defer c.Unlock()

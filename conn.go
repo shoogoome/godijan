@@ -20,7 +20,7 @@ func (c *dijanConn) sendGet(key string) error {
 	return err
 }
 
-func (c *dijanConn) sendSet(key, value string, ttl ...int) error {
+func (c *dijanConn) sendSet(key string, value []byte, ttl ...int) error {
 	kLen := len(key)
 	vlen := len(value)
 	var err error
@@ -44,24 +44,24 @@ func (c *dijanConn) sendMemberSignal() error {
 	return err
 }
 
-func (c *dijanConn) recvResponse() (string, error) {
+func (c *dijanConn) recvResponse() ([]byte, error) {
 	vlen := readLen(c.r)
 	if vlen == 0 {
-		return "", nil
+		return nil, nil
 	}
 	if vlen < 0 {
 		err := make([]byte, -vlen)
 		_, e := io.ReadFull(c.r, err)
 		if e != nil {
-			return "", e
+			return nil, e
 		}
-		return "", errors.New(string(err))
+		return nil, errors.New(string(err))
 	}
 	value := make([]byte, vlen)
 	_, e := io.ReadFull(c.r, value)
 	if e != nil {
-		return "", e
+		return nil, e
 	}
-	return string(value), nil
+	return value, nil
 }
 
