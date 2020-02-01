@@ -24,3 +24,5 @@ func (c *goDijan) PipelinedRun(cmds []*Cmd) {
 	//	cmd.Value, cmd.Error = c.recvResponse()
 	//}
 }
+
+
