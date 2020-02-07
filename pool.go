@@ -47,22 +47,10 @@ func (p *goDijanPool) Run(cmd *Cmd) {
 	panic("unknown cmd name " + cmd.Name)
 }
 
-func (p *goDijanPool) PipelinedRun(cmds []*Cmd) {
-	//if len(cmds) == 0 {
-	//	return
-	//}
-	//for _, cmd := range cmds {
-	//	if cmd.Name == "get" {
-	//		c.sendGet(cmd.Key)
-	//	}
-	//	if cmd.Name == "set" {
-	//		c.sendSet(cmd.Key, cmd.Value, cmd.TTL)
-	//	}
-	//	if cmd.Name == "del" {
-	//		c.sendDel(cmd.Key)
-	//	}
-	//}
-	//for _, cmd := range cmds {
-	//	cmd.Value, cmd.Error = c.recvResponse()
-	//}
+func (p *goDijanPool) PipelinedRun(cmds interface{}) {
+	c := <- p.conn
+	defer func() {
+		p.conn <- c
+	}()
+	c.PipelinedRun(cmds)
 }

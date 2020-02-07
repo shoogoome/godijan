@@ -1,7 +1,8 @@
 package godijan
 
 
-func (c *goDijan) PipelinedRun(cmds []*Cmd) {
+func (c *goDijan) PipelinedRun(cmd interface{}) {
+	cmds := cmd.([]*Cmd)
 	if len(cmds) == 0 {
 		return
 	}

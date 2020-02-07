@@ -21,7 +21,7 @@ type GoDijan interface {
 	Set(string, []byte, ...int) error
 	Del(string) error
 	Run(*Cmd)
-	PipelinedRun([]*Cmd)
+	PipelinedRun(interface{})
 }
 
 type goDijan struct {
