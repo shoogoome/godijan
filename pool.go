@@ -1,7 +1,5 @@
 package godijan
 
-import "fmt"
-
 type goDijanPool struct {
 	conn chan *goDijan
 }
@@ -10,9 +8,7 @@ func (p *goDijanPool) Get(key string) ([]byte, error) {
 	conn := <- p.conn
 	defer func() {
 		p.conn <- conn
-		fmt.Println("get放回: ", len(p.conn))
 	}()
-	fmt.Println("get获取: ", len(p.conn))
 	return conn.Get(key)
 }
 
@@ -20,9 +16,7 @@ func (p *goDijanPool) Set(key string, value []byte, ttl ...int) error {
 	conn := <- p.conn
 	defer func() {
 		p.conn <- conn
-		fmt.Println("set放回: ", len(p.conn))
 	}()
-	fmt.Println("set获取: ", len(p.conn))
 	return conn.Set(key, value, ttl...)
 }
 
@@ -30,9 +24,7 @@ func (p *goDijanPool) Del(key string) error {
 	conn := <- p.conn
 	defer func() {
 		p.conn <- conn
-		fmt.Println("del放回: ", len(p.conn))
 	}()
-	fmt.Println("del获取: ", len(p.conn))
 	return conn.Del(key)
 }
 
